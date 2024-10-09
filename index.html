@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>공 튀기기 게임</title>
+
+
+<head>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@200..700&display=swap" rel="stylesheet">
+
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@100..900&display=swap" rel="stylesheet">
+
+</head>
+
+<style>
+
+.oswald-<uniquifier> {
+  font-family: "Oswald", sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0; }
+
+
+.noto-sans-kr-<uniquifier> {
+  font-family: "Noto Sans KR", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: 100;
+  font-style: normal;
+}
+
+body {display: }
+
+h1 {
+    font-family: 'oswald', cursive; 
+    font-size: 100px; margin: 0;
+    text-align: center; color: orange;
+    animation: fontWeightChange 2s infinite;
+}
+
+ @keyframes fontWeightChange {
+            0% {font-weight: 200;}
+            50% {font-weight: 700;}
+            100% {font-weight: 200;}
+        }
+
+</style>
+<style>
+
+        canvas {
+            background:linear-gradient(to right, red, orange, yellow, green, blue, indigo, violet);
+            display: block;
+            margin: 0 auto;
+            border: 1px solid #d3d3d3;
+        }
+        .game-over, .score, .restart {
+            text-align: center;
+            display: none;
+
+        }
+        .game-over {
+            font-family:"Noto Sans KR" ;
+            font-size: 35px;
+            color: orange;
+            padding-top: 10px;
+        }
+        .score {
+            font-family:"Noto Sans KR";
+            font-size: 20px;
+            color: #0095DD;
+            padding-top: 10px;
+            font-family: "Noto Sans KR", cursive; 
+        }
+        .restart {
+            font-family:"Noto Sans KR";
+            margin-top: 10px;
+        }
+        .button {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: orange;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .button:hover {
+            background-color: #006fbb;
+        }
+
+        .volume-container {
+            display: block;
+            margin-top: 20px; padding-bottom: 5px}
+
+        .volume-label {
+            font-family: "Noto Sans KR";
+            font-size: 16px;
+            color: #333;
+            margin-right: 43%; 
+        }
+
+        .volume-slider {
+            width: 180px;
+            height: 5px; ;
+        }
+
+
+    </style>
+
+</head>
+
+<body>
+
+    <h1>BOUNCE BALL</h1>
+    
+    
+    <div class="volume-container" id="volumeContainer">
+        <span class="volume-label"></span>
+        <input type="range" min="0" max="1" step="0.01" value="0.5" class="volume-slider" id="volumeSlider">
+    </div>
+
+     <audio id="backgroundMusic" src="instrumental.mp3" preload="auto"></audio>
+
+    <canvas id="myCanvas" width="1400" height="400"></canvas>
+
+    <div class="game-over" id="gameOverMessage">다시 도전해보세요!</div>
+    <div class="score" id="scoreDisplay">최종점수</div>
+    <div class="restart" id="restartContainer">
+        <button class="button" id="restartButton">다시하기</button>
+    </div>
+
+    
+
+
+
+    <script>
+        let name = prompt("당신의 이름은?"," ")
+    
+
+        const canvas = document.getElementById("myCanvas");
+        const ctx = canvas.getContext("2d");
+
+        let ballRadius = 10;
+        let x = canvas.width / 2;
+        let y = canvas.height - 30;
+        let dx = 2;
+        let dy = -2;
+        let ballColor = "#0095DD";  // 공 색상
+        const paddleHeight = 10;
+        const paddleWidth = 75;
+        let paddleX = (canvas.width - paddleWidth) / 2;
+        let score = 0;
+        let isGameOver = false;
+        let currentShape = 'circle';
+
+        // 랜덤 색상 생성 함수
+        function getRandomColor() {
+            const letters = '0123456789ABCDEF';
+            let color = '#';
+            for (let i = 0; i < 6; i++) {
+                color += letters[Math.floor(Math.random() * 16)];
+            }
+            return color;
+        }
+
+        const backgroundMusic = document.getElementById('backgroundMusic');
+        const volumeSlider = document.getElementById('volumeSlider');
+        const startButton = document.getElementById('startButton');
+        const startContainer = document.getElementById('startContainer');
+
+        // 페이지 로드 시 음악 자동 재생
+        window.onload = function() {
+            backgroundMusic.play();
+            document.getElementById('volumeContainer').style.display = 'block'; 
+        };
+        volumeSlider.addEventListener('input', function() {
+            backgroundMusic.volume = volumeSlider.value;
+        });
+
+
+        // 랜덤 모양 선택 함수
+        function getRandomShape() {
+            const shapes = ['circle', 'triangle', 'square', 'pentagon'];
+            return shapes[Math.floor(Math.random() * shapes.length)];
+        }
+
+        // 5에서 25 사이의 랜덤 크기
+        function getRandomRadius() {
+    return Math.floor(Math.random() * 50) + 5;  
+}
+
+function changeSize() {
+            const circle = document.getElementById('circle');
+            const newRadius = getRandomRadius();
+            circle.style.width = `${newRadius}px`;
+            circle.style.height = `${newRadius}px`;
+        }
+
+
+        // 공 그리기 (랜덤 모양)
+        function drawBall() {
+            ctx.beginPath();
+            if (currentShape === 'circle') {
+                ctx.arc(x, y, ballRadius, 0, Math.PI * 2);
+            } else if (currentShape === 'triangle') {
+                ctx.moveTo(x, y - ballRadius);
+                ctx.lineTo(x - ballRadius, y + ballRadius);
+                ctx.lineTo(x + ballRadius, y + ballRadius);
+                ctx.closePath();
+            } else if (currentShape === 'square') {
+                ctx.rect(x - ballRadius, y - ballRadius, ballRadius * 2, ballRadius * 2);
+            } else if (currentShape === 'pentagon') {
+                const size = ballRadius;
+                const numberOfSides = 5;
+                const angle = (2 * Math.PI) / numberOfSides;
+                ctx.moveTo(x + size * Math.cos(0), y + size * Math.sin(0));
+                for (let i = 1; i <= numberOfSides; i++) {
+                    ctx.lineTo(x + size * Math.cos(i * angle), y + size * Math.sin(i * angle));
+                }
+            }
+            ctx.fillStyle = ballColor;  // 공 색상 적용
+            ctx.fill();
+            ctx.closePath();
+        }
+
+        // 패들 그리기
+        function drawPaddle() {
+            ctx.beginPath();
+            ctx.rect(paddleX, canvas.height - paddleHeight, paddleWidth, paddleHeight);
+            ctx.fillStyle = "white";
+            ctx.fill();
+            ctx.closePath();
+        }
+
+        // 점수 그리기
+        function drawScore() {
+            ctx.font = "20px Noto Sans KR";
+            ctx.fillStyle = "white";
+            ctx.fillText(name + "님의 점수: " + score, 8, 20);
+        }
+
+        // 게임 오버 처리
+        function gameOver() {
+            document.getElementById('gameOverMessage').style.display = 'block';
+            document.getElementById('scoreDisplay').style.display = 'block';
+            document.getElementById('scoreDisplay').innerHTML = '최종 점수: ' + score;
+            document.getElementById('restartContainer').style.display = 'block';
+            isGameOver = true;
+        }
+
+        // 공 및 패들 그리기와 충돌 처리
+        function draw() {
+            if (isGameOver) return;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawBall();
+            drawPaddle();
+            drawScore();
+
+            // 공이 화면 아래로 넘어가면 게임 오버
+            if (y + dy > canvas.height - ballRadius) {
+                if (x > paddleX && x < paddleX + paddleWidth) {
+                    dy = -dy;  // 패들에 맞으면 튕김
+                    score++;   // 점수 증가
+                    currentShape = getRandomShape();  // 공 모양 랜덤으로 변경
+                    ballColor = getRandomColor();  // 공 색상 랜덤으로 변경
+
+                    // 00단위로 점수에 따라 속도 증가
+                    if (score % 3 === 0) {
+                        if (dx > 0) {
+                            dx += 1;
+                        } else {
+                            dx -= 1;
+                        }
+                        if (dy > 0) {
+                            dy += 1;
+                        } else {
+                            dy -= 1;
+                        }
+                    }
+                } else {
+                    gameOver();  // 공이 바를 놓치면 게임 종료
+                }
+            }
+
+            if (x + dx > canvas.width - ballRadius || x + dx < ballRadius) {
+                dx = -dx;
+            }
+            if (y + dy < ballRadius) {
+                dy = -dy;
+            }
+
+            x += dx;
+            y += dy;
+
+            requestAnimationFrame(draw);
+        }
+
+        // 마우스 이동에 따른 패들 위치 조정
+        document.addEventListener("mousemove", mouseMoveHandler, false);
+        function mouseMoveHandler(e) {
+            const relativeX = e.clientX - canvas.offsetLeft;
+            if (relativeX > 0 && relativeX < canvas.width) {
+                paddleX = relativeX - paddleWidth / 2;
+            }
+        }
+
+        // 다시하기 버튼 클릭 시 게임 리셋
+        document.getElementById('restartButton').addEventListener('click', function() {
+            score = 0;
+            x = canvas.width / 2;
+            y = canvas.height - 30;
+            dx = 2;
+            dy = -2;
+            currentShape = 'circle';
+            ballColor = "white";  // 초기 공 색상
+            isGameOver = false;
+            document.getElementById('gameOverMessage').style.display = 'none';
+            document.getElementById('scoreDisplay').style.display = 'none';
+            document.getElementById('restartContainer').style.display = 'none';
+            
+            backgroundMusic.currentTime = 0;  // 음악을 처음부터 재생
+            backgroundMusic.play();
+            draw();
+        });
+
+        draw();  // 게임 시작
+
+    </script>
+
+</body>
+</html>
